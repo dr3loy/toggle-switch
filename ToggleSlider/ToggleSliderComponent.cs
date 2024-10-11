@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -19,6 +19,7 @@ namespace ToggleSlider
             this.Click += ToggleSlider_Click;
             timer1.Tick += Timer1_Tick;
             this.AutoSize = true;
+            Text = "toggleSlider1";
         }
         public event EventHandler CheckChanged;
 
@@ -42,7 +43,7 @@ namespace ToggleSlider
             get { return Bar_Color; }
             set { Bar_Color = value; Invalidate(); }
         }
-        private string Text = "toggleSlider1";
+
         public string ToggleBarText
         {
             get { return Text; }
@@ -54,6 +55,57 @@ namespace ToggleSlider
         private bool init_ = true;
         private Color circlecolor_ = new Color();
         private bool animating_ = false;
+        
+        /// <summary>
+        /// Calculate the required size of the control if in AutoSize.
+        /// </summary>
+        /// <returns>Size.</returns>
+        private Size GetAutoSize()
+        {
+            //Calculate size for autosize mode
+            Size textSize = TextRenderer.MeasureText(ToggleBarText, Font);
+            Size size = new Size(100, 20);
+            Size circleSize = GetCircleSize();
+            return new Size(textSize.Width + circleSize.Width + GetRoundedRectBounds().Width, circleSize.Height / 2 + 3);
+        }
+
+        private Size GetCircleSize()
+        {
+            return new Size(Convert.ToInt32(Font.SizeInPoints * 5), Convert.ToInt32(Font.SizeInPoints * 5));
+        }
+
+        private Rectangle GetRoundedRectBounds()
+        {
+            Size circle_size = GetCircleSize();
+            return new Rectangle((circle_size.Width / 4), ((circle_size.Height / 5) / 2), ((circle_size.Width) / 2), (3 * (circle_size.Height / 5) / 2));
+        }
+
+        /// <summary>
+        /// Retrieves the size of a rectangular area into which
+        /// a control can be fitted.
+        /// </summary>
+        public override Size GetPreferredSize(Size proposedSize)
+        {
+            return GetAutoSize();
+        }
+
+
+        /// <summary>
+        /// Performs the work of setting the specified bounds of this control.
+        /// </summary>
+        protected override void SetBoundsCore(int x, int y, int width, int height,
+                BoundsSpecified specified)
+        {
+            //  Only when the size is affected...
+            if (this.AutoSize && (specified & BoundsSpecified.Size) != 0)
+            {
+                Size size = GetAutoSize();
+                width = size.Width;
+                height = size.Height;
+            }
+            base.SetBoundsCore(x, y, width, height, specified);
+        }
+
         protected override void OnPaint(PaintEventArgs pevent)
         {
             if (init_ == true)
@@ -62,14 +114,14 @@ namespace ToggleSlider
             }
 
             pevent.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-            Size circle_size = new Size(Convert.ToInt32(Font.SizeInPoints * 5), Convert.ToInt32(Font.SizeInPoints * 5));
-            RoundedRect(Bar_Color, pevent.Graphics, new Rectangle((circle_size.Width / 4), ((circle_size.Height / 5) / 2), ((circle_size.Width) / 2), (3 * (circle_size.Height / 5) / 2)), 5);
-            System.Drawing.Drawing2D.LinearGradientBrush brush_gradient = new System.Drawing.Drawing2D.LinearGradientBrush(
-            new Point((circle_size.Width / 4), ((circle_size.Height / 5) / 2)),
-            new Point(circle_size.Width / 2, circle_size.Height / 2),
-            ToggleColorDisabled_Color,
-            ToggleColorDisabled_Color
-            );
+            Size circle_size = GetCircleSize();
+            RoundedRect(Bar_Color, pevent.Graphics, GetRoundedRectBounds(), 5);
+            //System.Drawing.Drawing2D.LinearGradientBrush brush_gradient = new System.Drawing.Drawing2D.LinearGradientBrush(
+            //new Point((circle_size.Width / 4), ((circle_size.Height / 5) / 2)),
+            //new Point(circle_size.Width / 2, circle_size.Height / 2),
+            //ToggleColorDisabled_Color,
+            //ToggleColorDisabled_Color
+            //);
             if (animating_ == false)
             {
                 if (!Checked_bool)
@@ -84,10 +136,8 @@ namespace ToggleSlider
 
             pevent.Graphics.FillEllipse(new SolidBrush(ToggleColorDisabled_Color), posx, posy, circle_size.Width / 2, circle_size.Height / 2);
             TextRenderer.DrawText(pevent.Graphics, ToggleBarText, this.Font, new Point(circle_size.Width, circle_size.Height / 10), this.ForeColor);
-
+            
             SetStyle(ControlStyles.SupportsTransparentBackColor, true);
-
-
         }
 
 
